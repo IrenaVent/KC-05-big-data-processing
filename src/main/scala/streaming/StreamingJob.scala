@@ -19,8 +19,6 @@ trait StreamingJob {
 
   def readUserMetadata(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame
 
-//  def enrichAntennaWithMetadata(antennaDF: DataFrame, metadataDF: DataFrame): DataFrame
-
   def totalBytesAntenna(dataFrame: DataFrame): DataFrame
 
   def totalBytesUser(dataFrame: DataFrame): DataFrame
@@ -36,14 +34,17 @@ trait StreamingJob {
     println(s"Running with: ${args.toSeq}")
 
     val kafkaDF = readFromKafka(kafkaServer, topic)
-    val antennaDF = parserJsonData(kafkaDF)
+    val deviceDF = parserJsonData(kafkaDF)
     val metadataDF = readUserMetadata(jdbcUri, jdbcMetadataTable, jdbcUser, jdbcPassword)
-//    val antennaMetadataDF = enrichAntennaWithMetadata(antennaDF, metadataDF)
-    val storageFuture = writeToStorage(antennaDF, storagePath)
-    val aggByCoordinatesDF = totalBytesAntenna(metadataDF)
-    val aggFuture = writeToJdbc(aggByCoordinatesDF, jdbcUri, aggJdbcTable, jdbcUser, jdbcPassword)
+    val storageFuture = writeToStorage(deviceDF, storagePath)
+    val sumBytesAntennaDF = totalBytesAntenna(deviceDF)
+    val sumBytesUserDF = totalBytesAntenna(deviceDF)
+    val sumBytesAppDF = totalBytesAntenna(deviceDF)
+    val sumFutureAntenna = writeToJdbc(sumBytesAntennaDF, jdbcUri, aggJdbcTable, jdbcUser, jdbcPassword)
+    val sumFutureUser = writeToJdbc(sumBytesUserDF, jdbcUri, aggJdbcTable, jdbcUser, jdbcPassword)
+    val sumFutureApp = writeToJdbc(sumBytesAppDF, jdbcUri, aggJdbcTable, jdbcUser, jdbcPassword)
 
-    Await.result(Future.sequence(Seq(aggFuture, storageFuture)), Duration.Inf)
+    Await.result(Future.sequence(Seq(sumFutureAntenna, sumFutureUser, sumFutureApp, storageFuture)), Duration.Inf)
 
     spark.close()
   }
