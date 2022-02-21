@@ -1,10 +1,11 @@
 package streaming
 
-import org.apache.spark.sql.functions.from_json
+import org.apache.spark.sql.functions.{avg, from_json, lit, max, min, sum, window}
 import org.apache.spark.sql.types.{IntegerType, LongType, StringType, StructField, StructType, TimestampType}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 object StreamingJobSpeedLayer extends StreamingJob {
   override val spark: SparkSession = SparkSession
@@ -48,20 +49,60 @@ object StreamingJobSpeedLayer extends StreamingJob {
       .load()
   }
 
-  override def enrichAntennaWithMetadata(antennaDF: DataFrame, metadataDF: DataFrame): DataFrame = ???
+//  override def enrichAntennaWithMetadata(antennaDF: DataFrame, metadataDF: DataFrame): DataFrame = ???
 
-  override def toDO(dataFrame: DataFrame): DataFrame = ???
+  override def totalBytesAntenna(dataFrame: DataFrame): DataFrame = {
+    dataFrame
+      .select($"timestamp", $"id", $"antenna_id", $"bytes", $"app")
+      .withWatermark("timestamp", "15 seconds")
+      .groupBy($"antenna_id", window($"timestamp", "90 seconds"))
+      .agg(sum("bytes").as("value"))
+      .withColumn("type", lit("antenna_byte_total"))
+      .select($"window.start".as("date"), $"antenna_id".as("id"), $"value", $"type")
+  }
+
+  override def totalBytesUser(dataFrame: DataFrame): DataFrame = {
+    dataFrame
+      .select($"timestamp", $"id", $"antenna_id", $"bytes", $"app")
+      .withWatermark("timestamp", "15 seconds")
+      .groupBy($"id", window($"timestamp", "90 seconds"))
+      .agg(sum("bytes").as("value"))
+      .withColumn("type", lit("user_byte_total"))
+      .select($"window.start".as("date"), $"id", $"value", $"type")
+  }
+
+  override def totalBytesApp(dataFrame: DataFrame): DataFrame = {
+    dataFrame
+      .select($"timestamp", $"id", $"antenna_id", $"bytes", $"app")
+      .withWatermark("timestamp", "15 seconds")
+      .groupBy($"app", window($"timestamp", "90 seconds"))
+      .agg(sum("bytes").as("value"))
+      .withColumn("type", lit("aap_byte_total"))
+      .select($"window.start".as("date"), $"app".as("id"), $"value", $"type")
+  }
 
   override def writeToJdbc(dataFrame: DataFrame, jdbcURI: String, jdbcTable: String, user: String, password: String): Future[Unit] = ???
 
   override def writeToStorage(dataFrame: DataFrame, storageRootPath: String): Future[Unit] = ???
 
   def main(args: Array[String]): Unit = {
-    parserJsonData(readFromKafka("34.88.239.219:9092", "devices"))
+    totalBytesAntenna(parserJsonData(readFromKafka("34.88.239.219:9092", "devices")))
       .writeStream
       .format(source = "console")
       .start()
       .awaitTermination()
+
+//    totalBytesUser(parserJsonData(readFromKafka("34.88.239.219:9092", "devices")))
+//      .writeStream
+//      .format(source = "console")
+//      .start()
+//      .awaitTermination()
+
+//   totalBytesApp(parserJsonData(readFromKafka("34.88.239.219:9092", "devices")))
+//     .writeStream
+//     .format(source = "console")
+//     .start()
+//     .awaitTermination()
 
   }
 }
