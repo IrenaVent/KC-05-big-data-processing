@@ -2,8 +2,9 @@ package streaming
 
 import org.apache.spark.sql.functions.{avg, from_json, lit, max, min, sum, window}
 import org.apache.spark.sql.types.{IntegerType, LongType, StringType, StructField, StructType, TimestampType}
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 
@@ -81,28 +82,54 @@ object StreamingJobSpeedLayer extends StreamingJob {
       .select($"window.start".as("date"), $"app".as("id"), $"value", $"type")
   }
 
-  override def writeToJdbc(dataFrame: DataFrame, jdbcURI: String, jdbcTable: String, user: String, password: String): Future[Unit] = ???
+  override def writeToJdbc(dataFrame: DataFrame, jdbcURI: String, jdbcTable: String, user: String, password: String): Future[Unit] = Future {
+    dataFrame
+      .writeStream
+      .foreachBatch { (data: DataFrame, batchId: Long) =>
+        data
+          .write
+          .mode(SaveMode.Append)
+          .format("jdbc")
+          .option("url", jdbcURI)
+          .option("dbtable", jdbcTable)
+          .option("user", user)
+          .option("password", password)
+          .save()
+      }.start()
+      .awaitTermination()
+  }
 
   override def writeToStorage(dataFrame: DataFrame, storageRootPath: String): Future[Unit] = ???
 
   def main(args: Array[String]): Unit = {
-    totalBytesAntenna(parserJsonData(readFromKafka("34.88.239.219:9092", "devices")))
-      .writeStream
-      .format(source = "console")
-      .start()
-      .awaitTermination()
 
-//    totalBytesUser(parserJsonData(readFromKafka("34.88.239.219:9092", "devices")))
-//      .writeStream
-//      .format(source = "console")
-//      .start()
-//      .awaitTermination()
+    val futureTBAntenna = writeToJdbc(
+      totalBytesAntenna(
+        parserJsonData(
+          readFromKafka(
+            "34.88.239.219:9092", "devices")
+        )
+      ), s"jdbc:postgresql://34.122.29.249:5432/postgres", "bytes", "postgres", "keepcoding")
 
-//   totalBytesApp(parserJsonData(readFromKafka("34.88.239.219:9092", "devices")))
-//     .writeStream
-//     .format(source = "console")
-//     .start()
-//     .awaitTermination()
+
+    val futureTBUser = writeToJdbc(
+      totalBytesUser(
+        parserJsonData(
+          readFromKafka(
+            "34.88.239.219:9092", "devices")
+        )
+      ), s"jdbc:postgresql://34.122.29.249:5432/postgres", "bytes", "postgres", "keepcoding")
+
+
+    val futureTBApp = writeToJdbc(
+      totalBytesApp(
+        parserJsonData(
+          readFromKafka(
+            "34.88.239.219:9092", "devices")
+        )
+      ),s"jdbc:postgresql://34.122.29.249:5432/postgres", "bytes", "postgres", "keepcoding")
+
+    Await.result(Future.sequence(Seq(futureTBAntenna, futureTBUser, futureTBApp)), Duration.Inf)
 
   }
 }
