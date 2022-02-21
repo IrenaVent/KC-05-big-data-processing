@@ -17,7 +17,7 @@ trait StreamingJob {
 
   def parserJsonData(dataFrame: DataFrame): DataFrame
 
-  def readAntennaMetadata(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame
+  def readUserMetadata(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame
 
   def enrichAntennaWithMetadata(antennaDF: DataFrame, metadataDF: DataFrame): DataFrame
 
@@ -33,7 +33,7 @@ trait StreamingJob {
 
     val kafkaDF = readFromKafka(kafkaServer, topic)
     val antennaDF = parserJsonData(kafkaDF)
-    val metadataDF = readAntennaMetadata(jdbcUri, jdbcMetadataTable, jdbcUser, jdbcPassword)
+    val metadataDF = readUserMetadata(jdbcUri, jdbcMetadataTable, jdbcUser, jdbcPassword)
     val antennaMetadataDF = enrichAntennaWithMetadata(antennaDF, metadataDF)
     val storageFuture = writeToStorage(antennaDF, storagePath)
     val aggByCoordinatesDF = toDO(antennaMetadataDF)

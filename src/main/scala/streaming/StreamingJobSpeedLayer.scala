@@ -37,7 +37,16 @@ object StreamingJobSpeedLayer extends StreamingJob {
       .select($"value.*")
   }
 
-  override def readAntennaMetadata(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame = ???
+  override def readUserMetadata(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame = {
+    spark
+      .read
+      .format("jdbc")
+      .option("url", jdbcURI)
+      .option("dbtable", jdbcTable)
+      .option("user", user)
+      .option("password", password)
+      .load()
+  }
 
   override def enrichAntennaWithMetadata(antennaDF: DataFrame, metadataDF: DataFrame): DataFrame = ???
 
@@ -53,5 +62,6 @@ object StreamingJobSpeedLayer extends StreamingJob {
       .format(source = "console")
       .start()
       .awaitTermination()
+
   }
 }
