@@ -2,6 +2,7 @@ package batch
 
 import org.apache.spark.sql.functions.lit
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import streaming.StreamingJobSpeedLayer.spark
 
 import java.time.OffsetDateTime
 
@@ -14,7 +15,6 @@ object BatchJobBatchLayer extends BatchJob {
   import spark.implicits._
 
   override def readFromStorage(storagePath: String, filterDate: OffsetDateTime): DataFrame = {
-    {
       spark
         .read
         .format("parquet")
@@ -25,10 +25,18 @@ object BatchJobBatchLayer extends BatchJob {
             $"day" === lit(filterDate.getDayOfMonth) &&
             $"hour" === lit(filterDate.getHour)
         )
-    }
   }
 
-  override def readAntennaMetadata(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame = ???
+  override def readUserMetadata(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame = {
+    spark
+      .read
+      .format("jdbc")
+      .option("url", jdbcURI)
+      .option("dbtable", jdbcTable)
+      .option("user", user)
+      .option("password", password)
+      .load()
+  }
 
   override def enrichAntennaWithMetadata(antennaDF: DataFrame, metadataDF: DataFrame): DataFrame = ???
 
@@ -45,8 +53,14 @@ object BatchJobBatchLayer extends BatchJob {
   def main(args: Array[String]): Unit = {
 
     val localDF = readFromStorage("/tmp/data", OffsetDateTime.parse("2022-02-22T11:00:00Z"))
+    val userMetadataDF = readUserMetadata(s"jdbc:postgresql://34.122.29.249:5432/postgres",
+      "user_metadata",
+      "postgres",
+      "keepcoding"
+    )
 
     localDF.show()
+    userMetadataDF.show()
 
   }
 

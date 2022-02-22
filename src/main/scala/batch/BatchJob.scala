@@ -13,7 +13,7 @@ trait BatchJob {
 
   def readFromStorage(storagePath: String, filterDate: OffsetDateTime): DataFrame
 
-  def readAntennaMetadata(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame
+  def readUserMetadata(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame
 
   def enrichAntennaWithMetadata(antennaDF: DataFrame, metadataDF: DataFrame): DataFrame
 
@@ -32,7 +32,7 @@ trait BatchJob {
     println(s"Running with: ${args.toSeq}")
 
     val antennaDF = readFromStorage(storagePath, OffsetDateTime.parse(filterDate))
-    val metadataDF = readAntennaMetadata(jdbcUri, jdbcMetadataTable, jdbcUser, jdbcPassword)
+    val metadataDF = readUserMetadata(jdbcUri, jdbcMetadataTable, jdbcUser, jdbcPassword)
     val antennaMetadataDF = enrichAntennaWithMetadata(antennaDF, metadataDF).cache()
     val aggByCoordinatesDF = computeDevicesCountByCoordinates(antennaMetadataDF)
     val aggPercentStatusDF = computePercentStatusByID(antennaMetadataDF)
