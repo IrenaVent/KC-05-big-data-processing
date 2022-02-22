@@ -13,9 +13,9 @@ trait BatchJob {
 
   def readFromStorage(storagePath: String, filterDate: OffsetDateTime): DataFrame
 
-  def readUserMetadata(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame
+  def readDataPSQL(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame
 
-  def enrichAntennaWithMetadata(antennaDF: DataFrame, metadataDF: DataFrame): DataFrame
+  def enrichMetadata(antennaDF: DataFrame, metadataDF: DataFrame): DataFrame
 
   def hourlyTotalBytesAntenna(dataFrame: DataFrame): DataFrame
 
@@ -23,22 +23,26 @@ trait BatchJob {
 
   def hourlyTotalBytesApp(dataFrame: DataFrame): DataFrame
 
+  def usersWithExceededQuota(dataFrame: DataFrame): DataFrame
+
   def writeToJdbc(dataFrame: DataFrame, jdbcURI: String, jdbcTable: String, user: String, password: String): Unit
 
   def run(args: Array[String]): Unit = {
     val Array(filterDate, storagePath, jdbcUri, jdbcMetadataTable, aggJdbcTable, aggJdbcErrorTable, aggJdbcPercentTable, jdbcUser, jdbcPassword) = args
     println(s"Running with: ${args.toSeq}")
 
-    val antennaDF = readFromStorage(storagePath, OffsetDateTime.parse(filterDate))
-    val metadataDF = readUserMetadata(jdbcUri, jdbcMetadataTable, jdbcUser, jdbcPassword)
-    val antennaMetadataDF = enrichAntennaWithMetadata(antennaDF, metadataDF).cache()
-    val aggByCoordinatesDF = hourlyTotalBytesAntenna(antennaMetadataDF)
-    val aggErrorAntennaDF = hourlyTotalBytesUser(antennaMetadataDF)
-    val aggPercentStatusDF = hourlyTotalBytesApp(antennaMetadataDF)
+    val localDF = readFromStorage(storagePath, OffsetDateTime.parse(filterDate))
+    val userMetadataDF = readDataPSQL(jdbcUri, jdbcMetadataTable, jdbcUser, jdbcPassword)
+    val hourlyBytesDataDF = readDataPSQL(jdbcUri, jdbcMetadataTable, jdbcUser, jdbcPassword)
+    val enrichMetadataDF = enrichMetadata(userMetadataDF, hourlyBytesDataDF).cache()
+    val sumTotalBytesAntennaDF = hourlyTotalBytesAntenna(localDF)
+    val sumTotalBytesUserDF = hourlyTotalBytesUser(localDF)
+    val sumTotalBytesAppDF = hourlyTotalBytesApp(localDF)
+    val ExceededQuotaDF = usersWithExceededQuota(enrichMetadataDF)
 
-    writeToJdbc(aggByCoordinatesDF, jdbcUri, aggJdbcTable, jdbcUser, jdbcPassword)
-    writeToJdbc(aggPercentStatusDF, jdbcUri, aggJdbcPercentTable, jdbcUser, jdbcPassword)
-    writeToJdbc(aggErrorAntennaDF, jdbcUri, aggJdbcErrorTable, jdbcUser, jdbcPassword)
+    writeToJdbc(sumTotalBytesAntennaDF, jdbcUri, aggJdbcTable, jdbcUser, jdbcPassword)
+    writeToJdbc(sumTotalBytesUserDF, jdbcUri, aggJdbcPercentTable, jdbcUser, jdbcPassword)
+    writeToJdbc(sumTotalBytesAppDF, jdbcUri, aggJdbcErrorTable, jdbcUser, jdbcPassword)
 
     spark.close()
   }

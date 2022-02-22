@@ -27,7 +27,7 @@ object BatchJobBatchLayer extends BatchJob {
         )
   }
 
-  override def readUserMetadata(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame = {
+  override def readDataPSQL(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame = {
     spark
       .read
       .format("jdbc")
@@ -38,7 +38,23 @@ object BatchJobBatchLayer extends BatchJob {
       .load()
   }
 
-  override def enrichAntennaWithMetadata(antennaDF: DataFrame, metadataDF: DataFrame): DataFrame = ???
+//  override def readBytesHourlyData(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame = {
+//    spark
+//      .read
+//      .format("jdbc")
+//      .option("url", jdbcURI)
+//      .option("dbtable", jdbcTable)
+//      .option("user", user)
+//      .option("password", password)
+//      .load()
+//  }
+
+  override def enrichMetadata( userMetadataDF: DataFrame, bytesHourlyDF: DataFrame): DataFrame = {
+    userMetadataDF.as("a")
+      .join(bytesHourlyDF.as("b"), $"a.id" === $"b.id")
+      .drop($"b.id")
+
+  }
 
   override def hourlyTotalBytesAntenna(dataFrame: DataFrame): DataFrame = {
     dataFrame
@@ -67,6 +83,13 @@ object BatchJobBatchLayer extends BatchJob {
       .select($"window.start".as("date"), $"app".as("id"), $"value", $"type")
   }
 
+  override def usersWithExceededQuota(dataFrame: DataFrame): DataFrame = {
+    dataFrame
+      .select($"date", $"email", $"quota", $"value")
+      .where($"value" > $"quota")
+      .select($"email", $"value".as("usage"), $"quota", $"date")
+  }
+
   override def writeToJdbc(dataFrame: DataFrame, jdbcURI: String, jdbcTable: String, user: String, password: String): Unit = {
     dataFrame
       .write
@@ -82,26 +105,41 @@ object BatchJobBatchLayer extends BatchJob {
   def main(args: Array[String]): Unit = {
 
     val localDF = readFromStorage("/tmp/data", OffsetDateTime.parse("2022-02-22T11:00:00Z"))
-    val userMetadataDF = readUserMetadata(s"jdbc:postgresql://34.122.29.249:5432/postgres",
+
+    val userMetadataDF = readDataPSQL(s"jdbc:postgresql://34.122.29.249:5432/postgres",
       "user_metadata",
       "postgres",
       "keepcoding"
     )
 
-    writeToJdbc(hourlyTotalBytesAntenna(localDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
+    val hourlyBytesDataDF = readDataPSQL(s"jdbc:postgresql://34.122.29.249:5432/postgres",
       "bytes_hourly",
       "postgres",
-      "keepcoding")
+      "keepcoding"
+    )
 
-    writeToJdbc(hourlyTotalBytesUser(localDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
-      "bytes_hourly",
-      "postgres",
-      "keepcoding")
+    val enrichDF = enrichMetadata(userMetadataDF, hourlyBytesDataDF)
 
-    writeToJdbc(hourlyTotalBytesApp(localDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
-      "bytes_hourly",
-      "postgres",
-      "keepcoding")
+    val exceededQuotaDF = usersWithExceededQuota(enrichDF)
+
+    enrichDF.show(false)
+    exceededQuotaDF.show(false)
+
+//    writeToJdbc(hourlyTotalBytesAntenna(localDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
+//      "bytes_hourly",
+//      "postgres",
+//      "keepcoding")
+//
+//    writeToJdbc(hourlyTotalBytesUser(localDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
+//      "bytes_hourly",
+//      "postgres",
+//      "keepcoding")
+//
+//    writeToJdbc(hourlyTotalBytesApp(localDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
+//      "bytes_hourly",
+//      "postgres",
+//      "keepcoding")
+
 
   }
 
