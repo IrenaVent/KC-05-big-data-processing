@@ -1,6 +1,6 @@
 package batch
 
-import org.apache.spark.sql.functions.lit
+import org.apache.spark.sql.functions.{lit, sum, window}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import streaming.StreamingJobSpeedLayer.spark
 
@@ -40,11 +40,32 @@ object BatchJobBatchLayer extends BatchJob {
 
   override def enrichAntennaWithMetadata(antennaDF: DataFrame, metadataDF: DataFrame): DataFrame = ???
 
-  override def computeDevicesCountByCoordinates(dataFrame: DataFrame): DataFrame = ???
+  override def hourlyTotalBytesAntenna(dataFrame: DataFrame): DataFrame = {
+    dataFrame
+      .select($"timestamp", $"id", $"antenna_id", $"bytes", $"app")
+      .groupBy($"antenna_id", window($"timestamp", "1 hour"))
+      .agg(sum("bytes").as("value"))
+      .withColumn("type", lit("antenna_byte_total"))
+      .select($"window.start".as("date"), $"antenna_id".as("id"), $"value", $"type")
+  }
 
-  override def computeErrorAntennaByModelAndVersion(dataFrame: DataFrame): DataFrame = ???
+  override def hourlyTotalBytesUser(dataFrame: DataFrame): DataFrame = {
+    dataFrame
+      .select($"timestamp", $"id", $"antenna_id", $"bytes", $"app")
+      .groupBy($"id", window($"timestamp", "1 hour"))
+      .agg(sum("bytes").as("value"))
+      .withColumn("type", lit("user_byte_total"))
+      .select($"window.start".as("date"), $"id", $"value", $"type")
+  }
 
-  override def computePercentStatusByID(dataFrame: DataFrame): DataFrame = ???
+  override def hourlyTotalBytesApp(dataFrame: DataFrame): DataFrame = {
+    dataFrame
+      .select($"timestamp", $"id", $"antenna_id", $"bytes", $"app")
+      .groupBy($"app", window($"timestamp", "1 hour"))
+      .agg(sum("bytes").as("value"))
+      .withColumn("type", lit("aap_byte_total"))
+      .select($"window.start".as("date"), $"app".as("id"), $"value", $"type")
+  }
 
   override def writeToJdbc(dataFrame: DataFrame, jdbcURI: String, jdbcTable: String, user: String, password: String): Unit = ???
 
@@ -58,9 +79,19 @@ object BatchJobBatchLayer extends BatchJob {
       "postgres",
       "keepcoding"
     )
+    val hourlyTBAntenna = hourlyTotalBytesAntenna(localDF)
+    val hourlyTBUser = hourlyTotalBytesUser(localDF)
+    val hourlyTBApp = hourlyTotalBytesApp(localDF)
 
-    localDF.show()
-    userMetadataDF.show()
+    localDF.show(false)
+    hourlyTBAntenna.show(false)
+    hourlyTBUser.show(false)
+    hourlyTBApp.show(false)
+
+//    writeToJdbc(hourlyTotalBytesAntenna(localDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
+//      "bytes_hourly",
+//      "postgres",
+//      "keepcoding")
 
   }
 
