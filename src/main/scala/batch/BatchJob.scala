@@ -25,8 +25,6 @@ trait BatchJob {
 
   def writeToJdbc(dataFrame: DataFrame, jdbcURI: String, jdbcTable: String, user: String, password: String): Unit
 
-  def writeToStorage(dataFrame: DataFrame, storageRootPath: String): Unit
-
   def run(args: Array[String]): Unit = {
     val Array(filterDate, storagePath, jdbcUri, jdbcMetadataTable, aggJdbcTable, aggJdbcErrorTable, aggJdbcPercentTable, jdbcUser, jdbcPassword) = args
     println(s"Running with: ${args.toSeq}")
@@ -41,8 +39,6 @@ trait BatchJob {
     writeToJdbc(aggByCoordinatesDF, jdbcUri, aggJdbcTable, jdbcUser, jdbcPassword)
     writeToJdbc(aggPercentStatusDF, jdbcUri, aggJdbcPercentTable, jdbcUser, jdbcPassword)
     writeToJdbc(aggErrorAntennaDF, jdbcUri, aggJdbcErrorTable, jdbcUser, jdbcPassword)
-
-    writeToStorage(antennaDF, storagePath)
 
     spark.close()
   }

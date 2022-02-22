@@ -1,7 +1,7 @@
 package batch
 
 import org.apache.spark.sql.functions.{lit, sum, window}
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import streaming.StreamingJobSpeedLayer.spark
 
 import java.time.OffsetDateTime
@@ -67,9 +67,17 @@ object BatchJobBatchLayer extends BatchJob {
       .select($"window.start".as("date"), $"app".as("id"), $"value", $"type")
   }
 
-  override def writeToJdbc(dataFrame: DataFrame, jdbcURI: String, jdbcTable: String, user: String, password: String): Unit = ???
-
-  override def writeToStorage(dataFrame: DataFrame, storageRootPath: String): Unit = ???
+  override def writeToJdbc(dataFrame: DataFrame, jdbcURI: String, jdbcTable: String, user: String, password: String): Unit = {
+    dataFrame
+      .write
+      .mode(SaveMode.Append)
+      .format("jdbc")
+      .option("url", jdbcURI)
+      .option("dbtable", jdbcTable)
+      .option("user", user)
+      .option("password", password)
+      .save()
+  }
 
   def main(args: Array[String]): Unit = {
 
@@ -79,19 +87,21 @@ object BatchJobBatchLayer extends BatchJob {
       "postgres",
       "keepcoding"
     )
-    val hourlyTBAntenna = hourlyTotalBytesAntenna(localDF)
-    val hourlyTBUser = hourlyTotalBytesUser(localDF)
-    val hourlyTBApp = hourlyTotalBytesApp(localDF)
 
-    localDF.show(false)
-    hourlyTBAntenna.show(false)
-    hourlyTBUser.show(false)
-    hourlyTBApp.show(false)
+    writeToJdbc(hourlyTotalBytesAntenna(localDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
+      "bytes_hourly",
+      "postgres",
+      "keepcoding")
 
-//    writeToJdbc(hourlyTotalBytesAntenna(localDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
-//      "bytes_hourly",
-//      "postgres",
-//      "keepcoding")
+    writeToJdbc(hourlyTotalBytesUser(localDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
+      "bytes_hourly",
+      "postgres",
+      "keepcoding")
+
+    writeToJdbc(hourlyTotalBytesApp(localDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
+      "bytes_hourly",
+      "postgres",
+      "keepcoding")
 
   }
 
