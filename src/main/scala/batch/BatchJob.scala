@@ -2,9 +2,6 @@ package batch
 
 import java.sql.Timestamp
 import java.time.OffsetDateTime
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
