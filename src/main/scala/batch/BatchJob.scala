@@ -28,21 +28,22 @@ trait BatchJob {
   def writeToJdbc(dataFrame: DataFrame, jdbcURI: String, jdbcTable: String, user: String, password: String): Unit
 
   def run(args: Array[String]): Unit = {
-    val Array(filterDate, storagePath, jdbcUri, jdbcMetadataTable, aggJdbcTable, aggJdbcErrorTable, aggJdbcPercentTable, jdbcUser, jdbcPassword) = args
+    val Array(storagePath, filterDate , jdbcUri, jdbcUserMetaTable,jdbcByteHourlyTable, quotaLimitTable, jdbcUser, jdbcPassword) = args
     println(s"Running with: ${args.toSeq}")
 
     val localDF = readFromStorage(storagePath, OffsetDateTime.parse(filterDate))
-    val userMetadataDF = readDataPSQL(jdbcUri, jdbcMetadataTable, jdbcUser, jdbcPassword)
-    val hourlyBytesDataDF = readDataPSQL(jdbcUri, jdbcMetadataTable, jdbcUser, jdbcPassword)
+    val userMetadataDF = readDataPSQL(jdbcUri, jdbcUserMetaTable, jdbcUser, jdbcPassword)
+    val hourlyBytesDataDF = readDataPSQL(jdbcUri, jdbcByteHourlyTable, jdbcUser, jdbcPassword)
     val enrichMetadataDF = enrichMetadata(userMetadataDF, hourlyBytesDataDF).cache()
     val sumTotalBytesAntennaDF = hourlyTotalBytesAntenna(localDF)
     val sumTotalBytesUserDF = hourlyTotalBytesUser(localDF)
     val sumTotalBytesAppDF = hourlyTotalBytesApp(localDF)
-    val ExceededQuotaDF = usersWithExceededQuota(enrichMetadataDF)
+    val exceededQuotaDF = usersWithExceededQuota(enrichMetadataDF)
 
-    writeToJdbc(sumTotalBytesAntennaDF, jdbcUri, aggJdbcTable, jdbcUser, jdbcPassword)
-    writeToJdbc(sumTotalBytesUserDF, jdbcUri, aggJdbcPercentTable, jdbcUser, jdbcPassword)
-    writeToJdbc(sumTotalBytesAppDF, jdbcUri, aggJdbcErrorTable, jdbcUser, jdbcPassword)
+    writeToJdbc(sumTotalBytesAntennaDF, jdbcUri, jdbcByteHourlyTable, jdbcUser, jdbcPassword)
+    writeToJdbc(sumTotalBytesUserDF, jdbcUri, jdbcByteHourlyTable, jdbcUser, jdbcPassword)
+    writeToJdbc(sumTotalBytesAppDF, jdbcUri, jdbcByteHourlyTable, jdbcUser, jdbcPassword)
+    writeToJdbc(exceededQuotaDF, jdbcUri, quotaLimitTable, jdbcUser, jdbcPassword)
 
     spark.close()
   }

@@ -7,7 +7,7 @@ import scala.concurrent.{Await, Future}
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-case class AntennaMessage(timestamp: Timestamp, id: String, metric: String, value: Long)
+case class devicesMessage(timestamp: Timestamp, id: String, antenna_id: String, bytes: Long, app: String)
 
 trait StreamingJob {
 
@@ -16,8 +16,6 @@ trait StreamingJob {
   def readFromKafka(kafkaServer: String, topic: String): DataFrame
 
   def parserJsonData(dataFrame: DataFrame): DataFrame
-
-//  def readUserMetadata(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame
 
   def totalBytesAntenna(dataFrame: DataFrame): DataFrame
 
@@ -30,19 +28,18 @@ trait StreamingJob {
   def writeToStorage(dataFrame: DataFrame, storageRootPath: String): Future[Unit]
 
   def run(args: Array[String]): Unit = {
-    val Array(kafkaServer, topic, jdbcUri, jdbcMetadataTable, aggJdbcTable, jdbcUser, jdbcPassword, storagePath) = args
+    val Array(kafkaServer, topic, jdbcUri, bytesJdbcTable, jdbcUser, jdbcPassword, storagePath) = args
     println(s"Running with: ${args.toSeq}")
 
     val kafkaDF = readFromKafka(kafkaServer, topic)
     val deviceDF = parserJsonData(kafkaDF)
-//    val metadataDF = readUserMetadata(jdbcUri, jdbcMetadataTable, jdbcUser, jdbcPassword)
     val storageFuture = writeToStorage(deviceDF, storagePath)
     val sumBytesAntennaDF = totalBytesAntenna(deviceDF)
-    val sumBytesUserDF = totalBytesAntenna(deviceDF)
-    val sumBytesAppDF = totalBytesAntenna(deviceDF)
-    val sumFutureAntenna = writeToJdbc(sumBytesAntennaDF, jdbcUri, aggJdbcTable, jdbcUser, jdbcPassword)
-    val sumFutureUser = writeToJdbc(sumBytesUserDF, jdbcUri, aggJdbcTable, jdbcUser, jdbcPassword)
-    val sumFutureApp = writeToJdbc(sumBytesAppDF, jdbcUri, aggJdbcTable, jdbcUser, jdbcPassword)
+    val sumBytesUserDF = totalBytesUser(deviceDF)
+    val sumBytesAppDF = totalBytesApp(deviceDF)
+    val sumFutureAntenna = writeToJdbc(sumBytesAntennaDF, jdbcUri, bytesJdbcTable, jdbcUser, jdbcPassword)
+    val sumFutureUser = writeToJdbc(sumBytesUserDF, jdbcUri, bytesJdbcTable, jdbcUser, jdbcPassword)
+    val sumFutureApp = writeToJdbc(sumBytesAppDF, jdbcUri, bytesJdbcTable, jdbcUser, jdbcPassword)
 
     Await.result(Future.sequence(Seq(sumFutureAntenna, sumFutureUser, sumFutureApp, storageFuture)), Duration.Inf)
 

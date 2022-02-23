@@ -2,7 +2,7 @@ package batch
 
 import org.apache.spark.sql.functions.{lit, sum, window}
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
-import streaming.StreamingJobSpeedLayer.spark
+import streaming.StreamingJobSpeedLayer.{run, spark}
 
 import java.time.OffsetDateTime
 
@@ -101,9 +101,12 @@ object BatchJobBatchLayer extends BatchJob {
       .save()
   }
 
+  def main(args: Array[String]): Unit = run(args)
+
+/*
   def main(args: Array[String]): Unit = {
 
-    val localDF = readFromStorage("/tmp/data", OffsetDateTime.parse("2022-02-22T11:00:00Z"))
+    val localDF = readFromStorage("/tmp/data", OffsetDateTime.parse("2022-02-21T23:00:00Z"))
 
     val userMetadataDF = readDataPSQL(s"jdbc:postgresql://34.122.29.249:5432/postgres",
       "user_metadata",
@@ -119,31 +122,26 @@ object BatchJobBatchLayer extends BatchJob {
 
     val enrichDF = enrichMetadata(userMetadataDF, hourlyBytesDataDF)
 
-    val exceededQuotaDF = usersWithExceededQuota(enrichDF)
+    writeToJdbc(hourlyTotalBytesAntenna(localDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
+      "bytes_hourly",
+      "postgres",
+      "keepcoding")
 
-//    enrichDF.show(false)
-//    exceededQuotaDF.show(false)
+    writeToJdbc(hourlyTotalBytesUser(localDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
+      "bytes_hourly",
+      "postgres",
+      "keepcoding")
 
-//    writeToJdbc(hourlyTotalBytesAntenna(localDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
-//      "bytes_hourly",
-//      "postgres",
-//      "keepcoding")
-//
-//    writeToJdbc(hourlyTotalBytesUser(localDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
-//      "bytes_hourly",
-//      "postgres",
-//      "keepcoding")
-//
-//    writeToJdbc(hourlyTotalBytesApp(localDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
-//      "bytes_hourly",
-//      "postgres",
-//      "keepcoding")
+    writeToJdbc(hourlyTotalBytesApp(localDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
+      "bytes_hourly",
+      "postgres",
+      "keepcoding")
 
-//      writeToJdbc(usersWithExceededQuota(enrichDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
-//        "user_quota_limit",
-//        "postgres",
-//        "keepcoding")
-
+    writeToJdbc(usersWithExceededQuota(enrichDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
+      "user_quota_limit",
+      "postgres",
+      "keepcoding")
   }
+  */
 
 }

@@ -10,8 +10,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 
-//case class devicesMessage(timestamp: Timestamp, id: String, antenna_id: String, bytes: Long, app: String)
-
 object StreamingJobSpeedLayer extends StreamingJob {
 
   override val spark: SparkSession = SparkSession
@@ -32,36 +30,25 @@ object StreamingJobSpeedLayer extends StreamingJob {
 
   override def parserJsonData(dataFrame: DataFrame): DataFrame = {
 
-//    val deviceSchema: StructType = ScalaReflection.schemaFor[devicesMessage].dataType.asInstanceOf[StructType]
-//
-//    dataFrame
-//      .select(from_json(col("value").cast(StringType), deviceSchema).as("json"))
-//      .select("json.*")
-//      .withColumn("timestamp", $"timestamp".cast(TimestampType))
-
-    val struct = StructType(Seq(
-      StructField("timestamp", TimestampType, nullable = false),
-      StructField("id", StringType, nullable = false),
-      StructField("antenna_id", StringType, nullable = false),
-      StructField("bytes", LongType, nullable = false),
-      StructField("app", StringType, nullable = false),
-    ))
+    val deviceSchema: StructType = ScalaReflection.schemaFor[devicesMessage].dataType.asInstanceOf[StructType]
 
     dataFrame
-      .select(from_json($"value".cast(StringType),struct).as("value"))
-      .select($"value.*")
-  }
+      .select(from_json(col("value").cast(StringType), deviceSchema).as("json"))
+      .select("json.*")
+      .withColumn("timestamp", $"timestamp".cast(TimestampType))
 
-//  override def readUserMetadata(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame = {
-//    spark
-//      .read
-//      .format("jdbc")
-//      .option("url", jdbcURI)
-//      .option("dbtable", jdbcTable)
-//      .option("user", user)
-//      .option("password", password)
-//      .load()
-//  }
+//    val struct = StructType(Seq(
+//      StructField("timestamp", TimestampType, nullable = false),
+//      StructField("id", StringType, nullable = false),
+//      StructField("antenna_id", StringType, nullable = false),
+//      StructField("bytes", LongType, nullable = false),
+//      StructField("app", StringType, nullable = false),
+//    ))
+//
+//    dataFrame
+//      .select(from_json($"value".cast(StringType),struct).as("value"))
+//      .select($"value.*")
+  }
 
   override def totalBytesAntenna(dataFrame: DataFrame): DataFrame = {
     dataFrame
@@ -130,6 +117,9 @@ object StreamingJobSpeedLayer extends StreamingJob {
       .awaitTermination()
   }
 
+  def main(args: Array[String]): Unit = run(args)
+
+  /*
   def main(args: Array[String]): Unit = {
 
     val futureTBAntenna = writeToJdbc(
@@ -159,6 +149,6 @@ object StreamingJobSpeedLayer extends StreamingJob {
     val futureStorage = writeToStorage(parserJsonData(readFromKafka("34.88.239.219:9092", "devices")), "/tmp")
 
     Await.result(Future.sequence(Seq(futureTBAntenna, futureTBUser, futureTBApp, futureStorage)), Duration.Inf)
-
   }
+  */
 }
