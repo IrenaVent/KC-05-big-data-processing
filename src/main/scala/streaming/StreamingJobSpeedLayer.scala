@@ -52,16 +52,16 @@ object StreamingJobSpeedLayer extends StreamingJob {
       .select($"value.*")
   }
 
-  override def readUserMetadata(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame = {
-    spark
-      .read
-      .format("jdbc")
-      .option("url", jdbcURI)
-      .option("dbtable", jdbcTable)
-      .option("user", user)
-      .option("password", password)
-      .load()
-  }
+//  override def readUserMetadata(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame = {
+//    spark
+//      .read
+//      .format("jdbc")
+//      .option("url", jdbcURI)
+//      .option("dbtable", jdbcTable)
+//      .option("user", user)
+//      .option("password", password)
+//      .load()
+//  }
 
   override def totalBytesAntenna(dataFrame: DataFrame): DataFrame = {
     dataFrame

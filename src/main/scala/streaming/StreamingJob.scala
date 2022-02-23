@@ -17,7 +17,7 @@ trait StreamingJob {
 
   def parserJsonData(dataFrame: DataFrame): DataFrame
 
-  def readUserMetadata(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame
+//  def readUserMetadata(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame
 
   def totalBytesAntenna(dataFrame: DataFrame): DataFrame
 
@@ -35,7 +35,7 @@ trait StreamingJob {
 
     val kafkaDF = readFromKafka(kafkaServer, topic)
     val deviceDF = parserJsonData(kafkaDF)
-    val metadataDF = readUserMetadata(jdbcUri, jdbcMetadataTable, jdbcUser, jdbcPassword)
+//    val metadataDF = readUserMetadata(jdbcUri, jdbcMetadataTable, jdbcUser, jdbcPassword)
     val storageFuture = writeToStorage(deviceDF, storagePath)
     val sumBytesAntennaDF = totalBytesAntenna(deviceDF)
     val sumBytesUserDF = totalBytesAntenna(deviceDF)

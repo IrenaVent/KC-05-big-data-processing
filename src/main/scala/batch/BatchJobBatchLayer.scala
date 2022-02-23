@@ -49,11 +49,10 @@ object BatchJobBatchLayer extends BatchJob {
 //      .load()
 //  }
 
-  override def enrichMetadata( userMetadataDF: DataFrame, bytesHourlyDF: DataFrame): DataFrame = {
+  override def enrichMetadata(userMetadataDF: DataFrame, bytesHourlyDF: DataFrame): DataFrame = {
     userMetadataDF.as("a")
       .join(bytesHourlyDF.as("b"), $"a.id" === $"b.id")
       .drop($"b.id")
-
   }
 
   override def hourlyTotalBytesAntenna(dataFrame: DataFrame): DataFrame = {
@@ -122,8 +121,8 @@ object BatchJobBatchLayer extends BatchJob {
 
     val exceededQuotaDF = usersWithExceededQuota(enrichDF)
 
-    enrichDF.show(false)
-    exceededQuotaDF.show(false)
+//    enrichDF.show(false)
+//    exceededQuotaDF.show(false)
 
 //    writeToJdbc(hourlyTotalBytesAntenna(localDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
 //      "bytes_hourly",
@@ -140,6 +139,10 @@ object BatchJobBatchLayer extends BatchJob {
 //      "postgres",
 //      "keepcoding")
 
+//      writeToJdbc(usersWithExceededQuota(enrichDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
+//        "user_quota_limit",
+//        "postgres",
+//        "keepcoding")
 
   }
 
