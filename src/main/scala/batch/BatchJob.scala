@@ -32,12 +32,12 @@ trait BatchJob {
     println(s"Running with: ${args.toSeq}")
 
     val localDF = readFromStorage(storagePath, OffsetDateTime.parse(filterDate))
-    val userMetadataDF = readDataPSQL(jdbcUri, jdbcUserMetaTable, jdbcUser, jdbcPassword)
-    val hourlyBytesDataDF = readDataPSQL(jdbcUri, jdbcByteHourlyTable, jdbcUser, jdbcPassword)
-    val enrichMetadataDF = enrichMetadata(userMetadataDF, hourlyBytesDataDF).cache()
     val sumTotalBytesAntennaDF = hourlyTotalBytesAntenna(localDF)
     val sumTotalBytesUserDF = hourlyTotalBytesUser(localDF)
     val sumTotalBytesAppDF = hourlyTotalBytesApp(localDF)
+    val hourlyBytesDataDF = readDataPSQL(jdbcUri, jdbcByteHourlyTable, jdbcUser, jdbcPassword)
+    val userMetadataDF = readDataPSQL(jdbcUri, jdbcUserMetaTable, jdbcUser, jdbcPassword)
+    val enrichMetadataDF = enrichMetadata(userMetadataDF, hourlyBytesDataDF).cache()
     val exceededQuotaDF = usersWithExceededQuota(enrichMetadataDF)
 
     writeToJdbc(sumTotalBytesAntennaDF, jdbcUri, jdbcByteHourlyTable, jdbcUser, jdbcPassword)
