@@ -51,7 +51,7 @@ Desarrollar dashboard utilizando Apache Superset que muestre métricas y datos r
 * `def parserJsonData`: los datos obtenidos desde Kafka no tienen la estructura adecuada para un posterior procesamiento. Para ello debemos pre-procesar los datos, obteniendo la estructura (schema) y tipado adecuado.
 * `def totalBytesAntenna` `def totalBytesUser` `def totalBytesApp`: pasamos a desarrollar el cálculo de métricas agregadas, obteniendo el schema necesario marcado previamente por la tabla que almacenará dichos datos, creada en PostgreSQL.
 * `def writeToJdbc`: los tres DataFrame obtenidos anteriormente se vuelcan/escriben en la tabla `bytes` en PostgreSQL. Al ser trabajos que deben ser ejecutados de forma asíncrona debemos devolver las tres escrituras como un `Future` para la ejecución de trabajos en paralelo. 
-* `override def writeToStorage`: guardamos los datos de entrada en local, particionándolos por año, mes, día y hora, en formato PARQUET. Al igual que anteriormente, este trabajo debe ejecutarse de forma asíncrona, por lo que devuelve un `Future`.
+* `def writeToStorage`: guardamos los datos de entrada en local, particionándolos por año, mes, día y hora, en formato PARQUET. Al igual que anteriormente, este trabajo debe ejecutarse de forma asíncrona, por lo que devuelve un `Future`.
 * `def main(args: Array[String]): Unit = run(args)`: los argumentos necesarios para ejecutar Spark Structured Streaming Job son:
 ```
 "kafkaServer" "topicName" "jdbc:Uri" "jdbcTable" "jdbcUser" "jdbcPassword" "StorageRootPath"
@@ -61,11 +61,12 @@ Desarrollar dashboard utilizando Apache Superset que muestre métricas y datos r
 
 * `def readFromStorage`: obtener los datos almacenados en local, en formato PARQUET, por serie temporal, que se especifica en los argumentos.
 * `def hourlyTotalBytesAntenna` `hourlyTotalBytesUser` `hourlyTotalBytesApp`: una vez obtenido el DataFrame temporal, calculamos las métricas agregadas por hora.
+* `def writeToJdbc`: insertar los datos de las tres métricas en sus respectivas tablas en PostgreSQL.
 * `readDataPSQL`: desde PostgreSQL, obtener los metadatos de los usuarios.
 * `readDataPSQL`: desde PostgreSQL, obtener el total de bytes, por hora, transmitidos por id de usuario.
 * `def enrichMetadata`: enriquecer el DataFrame de total de bytes con el DataFrame de metadatos de usuario, para obtener la información necesaria para el cálculo de la siguiente métrica.
 * `def usersWithExceededQuota`: obtener el email de usuario que ha superado su límite de cuota por hora.
-* `def writeToJdbc`: insertar los datos de las cuatro métricas en sus respectivas tablas en PostgreSQL.
+* `def writeToJdbc`: insertar los datos de la cuarta métrica su respectiva tabla en PostgreSQL.
 
 * `def main(args: Array[String]): Unit = run(args)` los argumentos necesarios para ejecutar Spark SQL Job son:
 ```
