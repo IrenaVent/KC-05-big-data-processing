@@ -7,21 +7,17 @@ object JdbcProvisioner {
   def main(args: Array[String]) {
     val IpServer = "34.122.29.249"
 
-    // connect to the database named "mysql" on the localhost
     val driver = "org.postgresql.Driver"
     val url = s"jdbc:postgresql://$IpServer:5432/postgres"
     val username = "postgres"
     val password = "keepcoding"
 
-    // there's probably a better way to do this
     var connection: Connection = null
 
     try {
-      // make the connection
       Class.forName(driver)
       connection = DriverManager.getConnection(url, username, password)
 
-      // create the statement, and run the select query
       val statement = connection.createStatement()
       println("Conexión establecida correctamente!")
 

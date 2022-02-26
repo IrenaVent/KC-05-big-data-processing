@@ -46,7 +46,8 @@ Desarrollar dashboard utilizando Apache Superset que muestre métricas y datos r
 
 * Trabajo previo y logística:
   * Configuración de VM Compute Engine, configurar Kafka y Docker (simulador de datos en tiempo real). Establecer permisos de conexión, IP, etc.
-  * Crear instancia de Google Cloud SQL (PostgreSQL), donde volcaremos los metadatos de usuarios y crearemos las tablas para las futuras inserciones de las métricas. 
+  * Crear instancia de Google Cloud SQL (PostgreSQL), donde volcaremos los metadatos de usuarios y crearemos las tablas para las futuras inserciones de las métricas.
+  * Ejecutamos `JdbcProvisioner`, indicando siguientes argumentos: `IpServer`, `driver`, `url`, `username` y `password`.
 * `def readFromKafka`: leer datos desde topic `device` de Kafka.
 * `def parserJsonData`: los datos obtenidos desde Kafka no tienen la estructura adecuada para un posterior procesamiento. Para ello debemos pre-procesar los datos, obteniendo la estructura (schema) y tipado adecuado.
 * `def totalBytesAntenna` `def totalBytesUser` `def totalBytesApp`: pasamos a desarrollar el cálculo de métricas agregadas, obteniendo el schema necesario marcado previamente por la tabla que almacenará dichos datos, creada en PostgreSQL.
