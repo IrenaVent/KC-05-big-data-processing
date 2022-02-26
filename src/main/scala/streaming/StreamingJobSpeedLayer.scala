@@ -36,25 +36,13 @@ object StreamingJobSpeedLayer extends StreamingJob {
       .select(from_json(col("value").cast(StringType), deviceSchema).as("json"))
       .select("json.*")
       .withColumn("timestamp", $"timestamp".cast(TimestampType))
-
-//    val struct = StructType(Seq(
-//      StructField("timestamp", TimestampType, nullable = false),
-//      StructField("id", StringType, nullable = false),
-//      StructField("antenna_id", StringType, nullable = false),
-//      StructField("bytes", LongType, nullable = false),
-//      StructField("app", StringType, nullable = false),
-//    ))
-//
-//    dataFrame
-//      .select(from_json($"value".cast(StringType),struct).as("value"))
-//      .select($"value.*")
   }
 
   override def totalBytesAntenna(dataFrame: DataFrame): DataFrame = {
     dataFrame
       .select($"timestamp", $"id", $"antenna_id", $"bytes", $"app")
       .withWatermark("timestamp", "15 seconds")
-      .groupBy($"antenna_id", window($"timestamp", "90 seconds"))
+      .groupBy($"antenna_id", window($"timestamp", "5 minutes"))
       .agg(sum("bytes").as("value"))
       .withColumn("type", lit("antenna_byte_total"))
       .select($"window.start".as("date"), $"antenna_id".as("id"), $"value", $"type")
@@ -64,7 +52,7 @@ object StreamingJobSpeedLayer extends StreamingJob {
     dataFrame
       .select($"timestamp", $"id", $"antenna_id", $"bytes", $"app")
       .withWatermark("timestamp", "15 seconds")
-      .groupBy($"id", window($"timestamp", "90 seconds"))
+      .groupBy($"id", window($"timestamp", "5 minutes"))
       .agg(sum("bytes").as("value"))
       .withColumn("type", lit("user_byte_total"))
       .select($"window.start".as("date"), $"id", $"value", $"type")
@@ -74,7 +62,7 @@ object StreamingJobSpeedLayer extends StreamingJob {
     dataFrame
       .select($"timestamp", $"id", $"antenna_id", $"bytes", $"app")
       .withWatermark("timestamp", "15 seconds")
-      .groupBy($"app", window($"timestamp", "90 seconds"))
+      .groupBy($"app", window($"timestamp", "5 minutes"))
       .agg(sum("bytes").as("value"))
       .withColumn("type", lit("aap_byte_total"))
       .select($"window.start".as("date"), $"app".as("id"), $"value", $"type")
@@ -119,36 +107,4 @@ object StreamingJobSpeedLayer extends StreamingJob {
 
   def main(args: Array[String]): Unit = run(args)
 
-  /*
-  def main(args: Array[String]): Unit = {
-
-    val futureTBAntenna = writeToJdbc(
-      totalBytesAntenna(
-        parserJsonData(
-          readFromKafka(
-            "34.88.239.219:9092", "devices")
-        )
-      ), s"jdbc:postgresql://34.122.29.249:5432/postgres", "bytes", "postgres", "keepcoding")
-
-    val futureTBUser = writeToJdbc(
-      totalBytesUser(
-        parserJsonData(
-          readFromKafka(
-            "34.88.239.219:9092", "devices")
-        )
-      ), s"jdbc:postgresql://34.122.29.249:5432/postgres", "bytes", "postgres", "keepcoding")
-
-    val futureTBApp = writeToJdbc(
-      totalBytesApp(
-        parserJsonData(
-          readFromKafka(
-            "34.88.239.219:9092", "devices")
-        )
-      ),s"jdbc:postgresql://34.122.29.249:5432/postgres", "bytes", "postgres", "keepcoding")
-
-    val futureStorage = writeToStorage(parserJsonData(readFromKafka("34.88.239.219:9092", "devices")), "/tmp")
-
-    Await.result(Future.sequence(Seq(futureTBAntenna, futureTBUser, futureTBApp, futureStorage)), Duration.Inf)
-  }
-  */
 }

@@ -38,17 +38,6 @@ object BatchJobBatchLayer extends BatchJob {
       .load()
   }
 
-//  override def readBytesHourlyData(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame = {
-//    spark
-//      .read
-//      .format("jdbc")
-//      .option("url", jdbcURI)
-//      .option("dbtable", jdbcTable)
-//      .option("user", user)
-//      .option("password", password)
-//      .load()
-//  }
-
   override def enrichMetadata(userMetadataDF: DataFrame, bytesHourlyDF: DataFrame): DataFrame = {
     userMetadataDF.as("a")
       .join(bytesHourlyDF.as("b"), $"a.id" === $"b.id")
@@ -102,46 +91,5 @@ object BatchJobBatchLayer extends BatchJob {
   }
 
   def main(args: Array[String]): Unit = run(args)
-
-/*
-  def main(args: Array[String]): Unit = {
-
-    val localDF = readFromStorage("/tmp/data", OffsetDateTime.parse("2022-02-21T23:00:00Z"))
-
-    val userMetadataDF = readDataPSQL(s"jdbc:postgresql://34.122.29.249:5432/postgres",
-      "user_metadata",
-      "postgres",
-      "keepcoding"
-    )
-
-    val hourlyBytesDataDF = readDataPSQL(s"jdbc:postgresql://34.122.29.249:5432/postgres",
-      "bytes_hourly",
-      "postgres",
-      "keepcoding"
-    )
-
-    val enrichDF = enrichMetadata(userMetadataDF, hourlyBytesDataDF)
-
-    writeToJdbc(hourlyTotalBytesAntenna(localDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
-      "bytes_hourly",
-      "postgres",
-      "keepcoding")
-
-    writeToJdbc(hourlyTotalBytesUser(localDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
-      "bytes_hourly",
-      "postgres",
-      "keepcoding")
-
-    writeToJdbc(hourlyTotalBytesApp(localDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
-      "bytes_hourly",
-      "postgres",
-      "keepcoding")
-
-    writeToJdbc(usersWithExceededQuota(enrichDF),s"jdbc:postgresql://34.122.29.249:5432/postgres",
-      "user_quota_limit",
-      "postgres",
-      "keepcoding")
-  }
-  */
 
 }

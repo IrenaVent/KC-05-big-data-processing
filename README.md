@@ -52,7 +52,7 @@ Desarrollar dashboard utilizando Apache Superset que muestre métricas y datos r
 * `def totalBytesAntenna` `def totalBytesUser` `def totalBytesApp`: pasamos a desarrollar el cálculo de métricas agregadas, obteniendo el schema necesario marcado previamente por la tabla que almacenará dichos datos, creada en PostgreSQL.
 * `def writeToJdbc`: los tres DataFrame obtenidos anteriormente se vuelcan/escriben en la tabla `bytes` en PostgreSQL. Al ser trabajos que deben ser ejecutados de forma asíncrona debemos devolver las tres escrituras como un `Future` para la ejecución de trabajos en paralelo. 
 * `def writeToStorage`: guardamos los datos de entrada en local, particionándolos por año, mes, día y hora, en formato PARQUET. Al igual que anteriormente, este trabajo debe ejecutarse de forma asíncrona, por lo que devuelve un `Future`.
-* `def main(args: Array[String]): Unit = run(args)`: los argumentos necesarios para ejecutar Spark Structured Streaming Job son:
+* `def main(args: Array[String]): Unit = run(args)`: los argumentos necesarios para ejecutar Spark Structured Streaming Job, IDE Edit Configurations...son:
 ```
 "kafkaServer" "topicName" "jdbc:Uri" "jdbcTable" "jdbcUser" "jdbcPassword" "StorageRootPath"
 ```
@@ -67,8 +67,7 @@ Desarrollar dashboard utilizando Apache Superset que muestre métricas y datos r
 * `def enrichMetadata`: enriquecer el DataFrame de total de bytes con el DataFrame de metadatos de usuario, para obtener la información necesaria para el cálculo de la siguiente métrica.
 * `def usersWithExceededQuota`: obtener el email de usuario que ha superado su límite de cuota por hora.
 * `def writeToJdbc`: insertar los datos de la cuarta métrica su respectiva tabla en PostgreSQL.
-
-* `def main(args: Array[String]): Unit = run(args)` los argumentos necesarios para ejecutar Spark SQL Job son:
+* `def main(args: Array[String]): Unit = run(args)` los argumentos necesarios para ejecutar Spark SQL Job, IDE Edit Configurations... son:
 ```
 "StoragePath" "OffsetDateTime" "jdbc:Uri" "userMetadataTable" "bytesHourlyTable" "userQuotaLimitTable" "jdbcUser" "jdbcPassword"
 ```
