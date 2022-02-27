@@ -44,7 +44,7 @@ object StreamingJobSpeedLayer extends StreamingJob {
       .withWatermark("timestamp", "15 seconds")
       .groupBy($"antenna_id", window($"timestamp", "5 minutes"))
       .agg(sum("bytes").as("value"))
-      .withColumn("type", lit("antenna_byte_total"))
+      .withColumn("type", lit("antenna_bytes_total"))
       .select($"window.start".as("date"), $"antenna_id".as("id"), $"value", $"type")
   }
 
@@ -54,7 +54,7 @@ object StreamingJobSpeedLayer extends StreamingJob {
       .withWatermark("timestamp", "15 seconds")
       .groupBy($"id", window($"timestamp", "5 minutes"))
       .agg(sum("bytes").as("value"))
-      .withColumn("type", lit("user_byte_total"))
+      .withColumn("type", lit("user_bytes_total"))
       .select($"window.start".as("date"), $"id", $"value", $"type")
   }
 
@@ -64,7 +64,7 @@ object StreamingJobSpeedLayer extends StreamingJob {
       .withWatermark("timestamp", "15 seconds")
       .groupBy($"app", window($"timestamp", "5 minutes"))
       .agg(sum("bytes").as("value"))
-      .withColumn("type", lit("aap_byte_total"))
+      .withColumn("type", lit("app_bytes_total"))
       .select($"window.start".as("date"), $"app".as("id"), $"value", $"type")
   }
 
