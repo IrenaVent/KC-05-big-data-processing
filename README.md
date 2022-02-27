@@ -75,4 +75,4 @@ Desarrollar dashboard utilizando Apache Superset que muestre métricas y datos r
 
 ### Serving Layer
 
-![Alt text](/Volumes/T7 warehouse/Dropbox/Irena/dev/cursos/big data/05-big-data-processing/KC-05-big-data-processing/superset/superset.png?raw=true "Title")
+![plot](/Volumes/T7 warehouse/Dropbox/Irena/dev/cursos/big data/05-big-data-processing/KC-05-big-data-processing/superset/superset.png)
